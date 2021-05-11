@@ -1,0 +1,152 @@
+---
+title: "Portfolio5"
+author: "Fei Xie"
+date: "5/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#COVID World Map
+
+The aim of this portfolio is to compare the developing trend of COVID cases in country-wide and continent-wide, and draw a world map of COVID.
+
+```{r COVIDdata}
+library(lubridate)
+library(dplyr)
+library(tidyverse)
+library(rworldmap)
+
+COVID <- read.csv("https://opendata.ecdc.europa.eu/covid19/casedistribution/csv", na.strings = "", fileEncoding = "UTF-8-BOM", stringsAsFactors = F)
+```
+
+```{r description}
+glimpse(COVID)
+COVID %>%
+  count(countriesAndTerritories)
+```
+
+There are 12 columns and 61900 rows, recording the accumulative covid cases in 214 countries across the world.
+
+##Developing trend of COVID cases in the US
+```{r US_trend}
+data_US <- COVID %>%
+  filter (countriesAndTerritories == "United_States_of_America")
+
+data_US %>%
+  group_by(month) %>%
+  summarize(cases = sum(cases)) %>%
+  ggplot(aes (
+    x = month,
+    y = cases)) +
+  geom_path(color="Red")+
+  labs(
+    title = "the developing trend of COVID cases in the United States of America (2019/12/31-2020/12/14)",
+    x = "Date",
+    y = "Cases"
+  ) 
+```
+
+
+##Developing trend of COVID cases and death number in the US
+```{r US_death_trend}
+data_US%>%
+  group_by(month) %>%
+  summarize(cases = sum(cases), deaths = sum(deaths)) %>%
+  
+  ggplot(aes (
+    x = month)) +
+  geom_path(aes(y = deaths/100), color="Blue")+
+  geom_path(aes(y = cases/1000), color = "Red")+
+  scale_y_continuous(name = "Deaths/100", sec.axis = sec_axis(~.*10, name = "COVID cases/1000"))+
+  theme(
+    axis.title.y = element_text(color = "Blue", size=13),
+    axis.title.y.right = element_text(color = "Red", size=13)
+  ) +
+  labs(
+    title = "the developing trend of COVID cases in the United States of America",
+    subtitle = "from  2019/12/31 to 2020/12/14",
+    x = "Month/2020",
+    y = "Cases"
+  ) 
+```
+
+##Developing trend of COVID cases and death number in China
+```{r China_death_trend}
+data_China <- COVID %>%
+    filter (countriesAndTerritories == "China")
+
+data_China%>%
+  group_by(month) %>%
+  summarize(cases = sum(cases), deaths = sum(deaths)) %>%
+  
+  ggplot(aes (
+    x = month)) +
+  geom_path(aes(y = deaths/100), color="Blue")+
+  geom_path(aes(y = cases/1000), color = "Red")+
+  scale_y_continuous(name = "Deaths/100", sec.axis = sec_axis(~.*10, name = "COVID cases/1000"))+
+  theme(
+    axis.title.y = element_text(color = "Blue", size=13),
+    axis.title.y.right = element_text(color = "Red", size=13)
+  ) +
+  labs(
+    title = "the developing trend of COVID cases in China",
+    subtitle = "from  2019/12/31 to 2020/12/14",
+    x = "Month/2020",
+    y = "Cases"
+  ) 
+
+```
+
+#The latest map of acculmulative COVID cases (2020/12/14)
+
+```{r the_latest_data}
+data_late <- COVID %>%
+  filter (dateRep == "14/12/2020")
+```
+
+```{r the_latest_barplot}
+barplotCountryData()
+
+data(data_late, envir = environment(), package = "rworldmap")
+
+barplotCountryData(data_late,
+                   nameColumnToPlot = "cases",
+                   nameCountryColumn = "countryterritoryCode",
+                   maptitle = "the ranking of the COVID cases across countries (2020/12/14)")
+
+```
+
+#The World map of  the latest COVID cases (2020/12/14)
+```{r the_latest_map}
+mapCountryData()
+
+data(data_late, envir = environment(), package = "rworldmap")
+sPDF <- joinCountryData2Map(data_late
+              , nameJoinColumn = "countryterritoryCode")
+
+mapCountryData( sPDF
+              , nameColumnToPlot="cases" 
+              )
+  missingCountryCol = gray(.8)
+```
+
+#The Eorupean map of the latest COVID cases (2020/12/14)
+```{r the_latest_map}
+data_Europe <- data_late %>%
+  filter (continentExp == "Europe")
+
+mapCountryData()
+
+data(data_Europe,envir = environment(), package = "rworldmap")
+sPDF <- joinCountryData2Map(data_Europe
+              , nameJoinColumn = "countryterritoryCode")
+
+mapCountryData( sPDF
+              , nameColumnToPlot="cases" ,
+              mapRegion = "Europe"
+              )
+  missingCountryCol = gray(.8)
+```
